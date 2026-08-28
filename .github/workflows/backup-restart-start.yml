@@ -1,0 +1,33 @@
+name: Backup Restart Start
+
+on:
+  workflow_dispatch:
+
+jobs:
+  brs:
+    name: Backup + Restart + Start
+    runs-on: [self-hosted, linux, x64, lumina, hannover, cyberspace]
+    steps:
+      - name: Backup
+        run: |
+          set -e
+          TS=$(date +%Y%m%d-%H%M%S)
+          mkdir -p /opt/lumina/backups
+          if [ -f /etc/yggdrasil.conf ]; then
+            cp /etc/yggdrasil.conf "/opt/lumina/backups/yggdrasil.conf.$TS"
+            echo "Backup: /opt/lumina/backups/yggdrasil.conf.$TS"
+          fi
+
+      - name: Restart + Start
+        run: |
+          set -e
+          if [ -f /opt/lumina/yggdrasil-overlay.conf ]; then
+            cp /opt/lumina/yggdrasil-overlay.conf /etc/yggdrasil.conf
+          fi
+          if command -v systemctl >/dev/null 2>&1; then
+            sudo systemctl restart yggdrasil || sudo systemctl restart yggdrasild || true
+          elif command -v service >/dev/null 2>&1; then
+            sudo service yggdrasil restart || true
+          fi
+          sleep 2
+          echo "Lumina Network neu gestartet."
